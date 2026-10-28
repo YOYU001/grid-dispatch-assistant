@@ -47,6 +47,10 @@
 - Yoyo 確認卡 7 改為「不動」兩欄位；資料集擴大到 5,000 題，提高多件事、取消／改口、燈號、不需動作比例
   - v1 最終：train 3,954／validation 500／test 500／test_unseen_phrasing 394；與真人題最高相似 0.21
 
+- ✅ 資料集已上傳為 HF 私人 dataset **`yoyu001/grid-dispatch-notes-zh`**（筆記本 02），下載回來驗證題數一致；真人考卷不上傳
+  - Colab 小插曲：Drive 網頁上傳未出現在掛載路徑 → 改用 `files.upload()` 直接解壓到 Drive
+
 **下一步**
-- 合成資料上傳為 HF 私人 dataset，再進入 SFT + LoRA 訓練
-- 依試考結果設計合成資料格式（SLA 政策表、GridEvent、備註範本）
+- 筆記本 03：用 v2 格式評分器，考**未訓練**的 Qwen3-4B-Instruct-2507（test、test_unseen_phrasing、真人 20 題）→ 正式基準成績
+- 筆記本 04：QLoRA SFT（Colab T4、fp16），Trackio 監看 loss，checkpoint 存 Drive
+- 訓練後重考 ＋ lighteval GSM8K 退化檢查 → smol-course leaderboard
