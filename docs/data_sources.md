@@ -24,3 +24,18 @@
 - data.gov.tw 103262、33462、103046（可能有更細時間粒度）
 - PJM、NYISO 公告
 - 台電供電警戒燈號的最新門檻
+
+## 2026-10-28 補充：Yoyo 提供的候選清單分類（尚待 research agent 逐一查證）
+
+| 用途 | 資料 | v1 是否採用 |
+|---|---|---|
+| 情境：電網吃緊程度 | data.gov.tw「今日系統供需狀況」（10 分鐘，含備轉容量率）、「過去電力供需資訊」（日） | ✅ 採用（需確認 10 分鐘資料有無歷史檔） |
+| 情境：省電效果數字 | NLR Generative AI Workload Power Profiles（H100、0.1 秒，OpenEI） | ✅ 採用（自測前的參考值） |
+| 情境：工作負載組合 | BurstGPT（Azure OpenAI 請求紀錄） | ✅ 採用其一；ACME、Alibaba、MIT LLSC 備用 |
+| 報告背景與放大推算 | 愛爾蘭 CSO 資料中心用電統計 | 報告用，不進訓練 |
+| 他國電網 | EIA、CAISO OASIS、ERCOT、PJM、ENTSO-E、OPSD、NESO、AEMO | v1 不用（情境以台灣為主） |
+| 碳強度 | Electricity Maps | 🟡 之後「碳感知排程」延伸 |
+| 電網最佳化／強化學習 | OPFData、Grid2Op | ❌ 屬調度決策 AI，不是秘書的範圍 |
+| 中文說法風格 | 台電公開新聞稿、供電警戒燈號說明、需量反應措施 PDF | ✅ 公開文件，可參考語氣 |
+
+⚠️ 台電內部報告不得提供給外部 AI 服務或放入 repo，除非權責單位書面同意。
