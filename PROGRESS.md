@@ -20,6 +20,10 @@
 - Azure GPU 尚未申請到 → 先用 **Colab 免費 T4**（注意：T4 不支援 bf16，要用 fp16）
 - GSM8K 用 lighteval 評估，作為作業提交＋退化檢查
 
+- 選定基底模型 **Qwen3-4B-Instruct-2507**（理由：中文強、Apache-2.0、無思考模式→輸出乾淨 JSON、T4 可 QLoRA）
+- 完成 `notebooks/01_explore_model_baseline.ipynb`：讀 model card/config、看 chat template、載入模型、5 題試考
+- code-review agent 審查後修正：拒絕判斷誤判、False/0 混淆、transformers 版本、時間格式、加「必要條件都有」指標
+
 **下一步**
-- 看 research agent 的模型比較，選定基底模型
-- 開始設計合成資料格式（SLA 政策表、GridEvent、備註範本）
+- Yoyo 在 Colab T4 執行筆記本 01，回報成績單
+- 依試考結果設計合成資料格式（SLA 政策表、GridEvent、備註範本）
