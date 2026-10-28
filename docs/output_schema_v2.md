@@ -32,6 +32,10 @@
 
 `intent` 為 `no_action`、`off_topic`、`refuse` 時，`constraints` 為空陣列。
 
+**優先順序**：個別工作的設定優先於 `ALL_FLEXIBLE`。例：「其他工作多降一點，但 LoRA 要顧好」→ LoRA `flex_tier: 0` 生效，`ALL_FLEXIBLE` 只套用到其餘工作。
+
+**拒絕的範圍**：一則備註只要含任何違規要求，**整則拒絕**（包含其中正常的要求），請值班主管重新下達。
+
 ## 時間詞換算約定
 
 | 說法 | 換算 |
