@@ -4,6 +4,8 @@
 > 標記：🔴 卡住（等外部）｜🟡 之後做｜🟢 隨時可做
 
 ## 運算資源
+- 🟡 **NAS 方案（已決定：分階段）**：Colab 階段用 Drive＋Synology Cloud Sync；Azure VM 階段用 Tailscale 直連 NAS（NAS 開 SSH → rsync）。auth key 設 ephemeral＋tag，ACL 只允許連 NAS
+- 🟢 設定 Synology Cloud Sync：單向下載 Drive 的 `grid-dispatch-assistant/` 到 NAS
 - 🔴 Azure A100/H100 GPU 額度申請中 → 到手後把訓練從 Colab 移過去
 - 🔴 Purdue GPU 資源申請中 → 確認型號、能否讀 nvidia-smi 功耗
 - 🟡 確認雲端 VM 能否用 `nvidia-smi -pl` 調功率上限（母專案第 1 步需要）

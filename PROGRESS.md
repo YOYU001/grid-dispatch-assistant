@@ -27,6 +27,11 @@
 - 釐清模型角色：「翻譯官＋解說員」，不做決策、不直接控制 GPU
 - 決定做三版本對照實驗：A 無思考、B 完整思考、C 迷你思考（設計見 AGENT.md 5.5 節）
 
+- 介紹 Qwen3-4B Instruct／Thinking 雙胞胎與 FP8／FP4；TODO 記下 FP8 量測需 H100／L4
+- 建立 Colab 儲存工具 `notebooks/snippets/colab_storage.py`（Drive＋HF Hub＋斷線接續），經 code-review 修正：半寫入 checkpoint、Drive 垃圾桶、公開 repo 防呆、台灣時區
+- 建立 skill `.claude/skills/colab-storage`
+
 **下一步**
-- Yoyo 在 Colab T4 執行筆記本 01，回報成績單（Yoyo 決定執行時間）
+- Yoyo 設定 Colab 密鑰 HF_TOKEN、Synology Cloud Sync
+- Yoyo 在 Colab T4 執行筆記本 01（加上儲存段 A、B、C、E），回報成績單
 - 依試考結果設計合成資料格式（SLA 政策表、GridEvent、備註範本）
