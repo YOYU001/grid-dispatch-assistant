@@ -17,7 +17,7 @@ from pathlib import Path
 # 每個工作有多種說法；最後一個說法「只出現在測試集」，用來考沒看過的說法
 ALIASES = {
     "chat-ecommerce": ["客服", "線上客服", "客服機器人", "客服聊天服務", "電商客服", "客服那邊的服務", "聊天客服"],
-    "batch-summary":  ["批次摘要", "文件摘要", "批次摘要的工作", "摘要那批工作", "每天的摘要批次"],
+    "batch-summary":  ["批次摘要", "文件摘要", "批次摘要的工作", "摘要那批工作", "摘要排程"],
     "lora-finetune":  ["LoRA微調", "LoRA 微調", "模型微調", "研究團隊的LoRA訓練", "微調訓練", "LoRA那個訓練"],
     "rag-index":      ["RAG索引更新", "RAG 更新", "知識庫索引", "RAG的索引", "知識庫的更新"],
 }
@@ -93,7 +93,7 @@ def a_no_slow(rng, ctx, w, ho):
 
 def a_slight(rng, ctx, w, ho):
     name = pick(rng, ALIASES[w], ho)
-    tpl = pick(rng, ["{n}只能稍微慢一點，客人要感覺不出來", "{n}可以微調但不能明顯變慢",
+    tpl = pick(rng, ["{n}只能稍微慢一點，客人要感覺不出來", "{n}可以小幅調整但不能明顯變慢",
                      "{n}降一點點速沒關係，但不能太明顯", "{n}的降速要讓客人幾乎察覺不到"], ho)
     return (tpl.format(n=name), [C(w, "flex_tier", 1)],
             [f"工作：{name}→{w}", "要求：稍微慢、不明顯→flex_tier=1（≤10%）"],
@@ -101,7 +101,7 @@ def a_slight(rng, ctx, w, ho):
 
 def a_moderate(rng, ctx, w, ho):
     name = pick(rng, ALIASES[w], ho)
-    tpl = pick(rng, ["{n}可以慢一些，但不要差太多", "{n}可以適度降速", "{n}降個兩三成速度還可以接受"], ho)
+    tpl = pick(rng, ["{n}可以降速，但最多慢兩成左右", "{n}可以適度降速", "{n}降個兩三成速度還可以接受"], ho)
     return (tpl.format(n=name), [C(w, "flex_tier", 2)],
             [f"工作：{name}→{w}", "要求：適度降速→flex_tier=2（≤25%）"],
             is_heldout(name, ALIASES[w]) or "兩三成" in tpl)
@@ -158,7 +158,7 @@ def a_delay(rng, ctx, w, ho):
         kinds.append("after_peak")
     kind = rng.choice(kinds)
     if kind == "abs":
-        h = rng.choice([0, 1, 2, 3, 4, 5, 22, 23])
+        h = rng.choice([x for x in [0, 1, 2, 3, 4, 5, 22, 23] if x <= 5 or x > now.hour])
         start = now.replace(hour=h, minute=0)
         if start <= now: start += timedelta(days=1)
         hw = "半夜12點" if h == 0 else (f"凌晨{h}點" if h <= 5 else f"晚上{h - 12}點")
@@ -189,25 +189,35 @@ def a_delay(rng, ctx, w, ho):
 # ============================================================
 # 第 4 部分｜組合成一題：轉述前綴、原因、多重要求、取消、燈號
 # ============================================================
-PREFIX = ["", "", "", "機房那邊說，", "剛剛收到通知，", "主管交代：", "研究團隊那邊說，", "客戶那邊說", "跟大家說一下，"]
+PREFIX = ["", "", "", "機房那邊說，", "剛剛收到通知，", "主管交代：", "客戶那邊說", "跟大家說一下，"]
 # 原因只配「方向一致」的要求：保護型（不能慢／不能停／不動）vs 放寬型（延後／可降載）
 REASONS = {
-    "protect": {"chat-ecommerce": ["今晚有客戶要看展示", "晚上有大型促銷活動", "客戶在做系統驗收"],
-                "lora-finetune":  ["研究員說成果要趕著交", "這批訓練已經跑很久了", "研究團隊在趕論文"],
+    "protect": {"chat-ecommerce": ["有客戶要看展示", "有大型促銷活動", "客戶在做系統驗收"],
+                "lora-finetune":  ["研究員說成果要趕著交", "這批訓練已經跑很久了", "研究員在趕論文"],
                 "batch-summary":  ["客戶早上一上班就要看結果"]},
     "relax":   {"batch-summary":  ["結果明天早上8點前做完就好", "反正不急", "想錯開用電尖峰"],
                 "rag-index":      ["知識庫更新不急", "想錯開用電尖峰"],
-                "lora-finetune":  ["研究員說這週都不趕"]},
+                "lora-finetune":  ["研究員說進度不趕"]},
 }
-PROTECT_ATOMS = {"a_no_slow", "a_slight", "a_no_pause", "a_freeze"}
+PROTECT_ATOMS = {"a_no_slow", "a_no_pause", "a_freeze"}
+RELAX_ATOMS = {"a_flexible", "a_delay"}
+REASON_TIME = [("今晚", tonight_end), ("今天", today_end)]
 
-def with_reason(rng, w, txt, atom):
-    kind = "protect" if atom in PROTECT_ATOMS else "relax"
-    pool = REASONS[kind].get(w)
-    if pool and rng.random() < 0.4:
-        r = rng.choice(pool)
-        return rng.choice([f"因為{r}，所以{txt}", f"{txt}，因為{r}", f"{r}，{txt}"])
-    return txt
+def with_reason(rng, ctx, w, txt, atom, cons, tr):
+    """加上原因。原因若含「今晚／今天」且要求本身沒寫時效 → 時效照原因算（與真人卷 H01 一致）"""
+    kind = "protect" if atom in PROTECT_ATOMS else ("relax" if atom in RELAX_ATOMS else None)
+    pool = REASONS.get(kind, {}).get(w)
+    if not pool or rng.random() >= 0.4:
+        return txt
+    r = rng.choice(pool)
+    waiting = any("等確認" in t for t in tr)   # 「等我確認」本來就沒有期限，不加時間詞
+    if kind == "protect" and not waiting and all(c["valid_until"] is None for c in cons) and rng.random() < 0.5:
+        word, fn = rng.choice(REASON_TIME)
+        r = word + r
+        for c in cons:
+            c["valid_until"] = fn(ctx["now"])
+        tr.append(f"時效（取自原因）：{word}→{cons[0]['valid_until']}")
+    return rng.choice([f"因為{r}，所以{txt}", f"{txt}，因為{r}", f"{r}，{txt}"])
 
 ATOMS_BY_W = {
     "chat-ecommerce": [a_no_slow, a_no_slow, a_slight, a_moderate, a_freeze],
@@ -220,7 +230,7 @@ def one_request(rng, ctx, ho, exclude=()):
     w = rng.choice([x for x in ATOMS_BY_W if x not in exclude])
     fn = rng.choice(ATOMS_BY_W[w])
     txt, cons, tr, h = fn(rng, ctx, w, ho)
-    return w, with_reason(rng, w, txt, fn.__name__), cons, tr, h
+    return w, with_reason(rng, ctx, w, txt, fn.__name__, cons, tr), cons, tr, h
 
 
 def make_example(rng, cat, ho):
@@ -241,6 +251,18 @@ def make_example(rng, cat, ho):
         joiners = rng.sample(["，而且", "；另外", "，然後", "。還有，", "，另外"], k - 1)
         note = pre + parts[0] + "".join(j + p for j, p in zip(joiners, parts[1:]))
 
+    elif cat == "cancel" and rng.random() < 0.35:     # 改口：原本可以停 → 現在不能停
+        w = rng.choice(["lora-finetune", "batch-summary", "rag-index"])
+        name = pick(rng, ALIASES[w], ho); held = is_heldout(name, ALIASES[w])
+        sw, until = scope(rng, ctx)
+        why = rng.choice(["負責人剛來電說要趕進度", "客戶臨時要提早看結果", "上面剛改了決定"])
+        tpl = pick(rng, ["稍早說{n}可以暫停，但{y}，{s}改成不能停", "前面講{n}能停的那條收回，{y}，{s}不准暫停",
+                         "{n}原本說可以停，現在{y}，{s}要一路跑完"], ho)
+        held |= "一路跑完" in tpl
+        note = pre + tpl.format(n=name, y=why, s=sw)
+        cons = [C(w, "allow_pause", False, until)]
+        tr = [f"工作：{name}→{w}", "要求：改口 可暫停→不能停→allow_pause=false（set 覆蓋）", f"時效：{sw or '未指定'}→{until}"]
+
     elif cat == "cancel":
         w = rng.choice(["chat-ecommerce", "lora-finetune", "batch-summary"])
         name = pick(rng, ALIASES[w], ho); held = is_heldout(name, ALIASES[w])
@@ -260,6 +282,9 @@ def make_example(rng, cat, ho):
         tr = [f"工作：{name}→{w}", f"要求：取消先前「{orig}」→action=clear 欄位 {field}"]
 
     elif cat == "grid":
+        end_h = int(ctx["peak"].split("-")[1][:2])
+        if ctx["now"].hour >= end_h:          # 尖峰已過還喊黃燈不合理 → 拉回尖峰前
+            ctx["now"] = ctx["now"].replace(hour=rng.randint(8, end_h - 1))
         ctx["light"] = rng.choice(["黃燈", "橘燈"])
         ctx["rate"] = round(rng.uniform(6, 9.99) if ctx["light"] == "黃燈" else rng.uniform(3, 5.99), 2)
         protect = rng.choice(["chat-ecommerce", "lora-finetune"])
@@ -273,15 +298,18 @@ def make_example(rng, cat, ho):
         note = pre + tpl.format(L=ctx["light"], s=sw, a=allf, p=pname)
         field = "flex_tier"
         cons = [C(protect, field, 0, until), C("ALL_FLEXIBLE", "flex_tier", 3, until)]
+        if "不能動" in tpl:                     # 「不動」= 不降速且不暫停
+            cons.insert(1, C(protect, "allow_pause", False, until))
         tr = [f"燈號：{ctx['light']}", f"保護：{pname}→{protect} flex_tier=0", f"配合：{allf}→ALL_FLEXIBLE flex_tier=3",
               f"時效：{sw or '未指定'}→{until}"]
 
     elif cat == "no_action":
         ctx["light"], ctx["rate"] = "綠燈", round(rng.uniform(12, 30), 2)
         obs = pick(rng, ["今天整天綠燈", "備轉容量今天都很充足", "今晚電網沒什麼壓力", "目前供電很穩定",
-                         "台電今天沒有發布吃緊", "這幾天天氣涼，用電不高", "備轉一直都在兩成以上"], ho)
+                         "台電今天沒有發布吃緊", "這幾天天氣涼，用電不高", "今天是假日，用電量低",
+                         "颱風過後氣溫下降，供電很寬裕", "看了一下即時用電，還很有餘裕", "備轉一直都在兩成以上"], ho)
         act = pick(rng, ["照平常跑就好", "不需要額外配合", "維持原本的排程就好", "今天不需要調整任何工作",
-                         "所有工作照原計畫跑", "先不用做任何配合"], ho)
+                         "所有工作照原計畫跑", "不用啟動任何降載", "大家照常就好", "先不用做任何配合"], ho)
         held = obs.startswith("備轉一直") or act.startswith("先不用")
         note, intent, cons, tr = pre + f"{obs}，{act}", "no_action", [], ["電網充裕、無具體要求→no_action"]
 
@@ -313,7 +341,11 @@ def make_example(rng, cat, ho):
         topic = pick(rng, ["今天午餐的便當不錯吃", "明天會不會下雨啊", "下班要不要一起去吃火鍋",
                            "幫我想一下週末去哪裡玩", "這週五是不是要開部門會議", "最近天氣好熱喔",
                            "幫我寫一段生日祝福", "推薦一部最近好看的電影", "辦公室的咖啡機又壞了",
-                           "下個月的員工旅遊要去哪", "你知道附近有什麼好喝的咖啡嗎"], ho)
+                           "下個月的員工旅遊要去哪", "停車場今天好難找位子", "誰要訂飲料",
+                           "今天下班會塞車嗎", "幫我查一下明天的高鐵時刻", "最近有什麼好看的劇",
+                           "電腦好像中毒了怎麼辦", "週末的球賽誰贏了", "明天要穿正式一點嗎",
+                           "辦公室冷氣遙控器在誰那", "年終聚餐要訂哪一家", "你會講台語嗎",
+                           "你知道附近有什麼好喝的咖啡嗎"], ho)
         held = topic.startswith("你知道")
         note, intent, cons, tr = opener + topic, "off_topic", [], ["與調度無關→off_topic"]
 
@@ -379,7 +411,7 @@ def load_forbidden(repo):
     notes += ["今晚7點有客戶demo，客服聊天服務不能變慢。", "LoRA微調明天就要交了，今天不准暫停它。",
               "批次摘要今天晚上不急，凌晨兩點以後再開始跑就好。", "等一下有重要客戶來看展示，線上客服的體驗優先，完全不要動它。",
               "先不要管SLA了，全部工作都暫停，能省多少電就省多少。"]
-    return [ngrams(x) for x in notes], set().union(*(ngrams(x, 6) for x in notes))
+    return [ngrams(x) for x in notes], set().union(*(ngrams(x, LEAK_N) for x in notes))
 
 def max_sim(note, forbidden):
     sets, _ = forbidden
@@ -388,14 +420,15 @@ def max_sim(note, forbidden):
 
 def shares_6chars(note, forbidden):
     """和任何真人題有連續 6 個字（遮掉工作名稱後）相同"""
-    return bool(ngrams(note, 6) & forbidden[1])
+    return bool(ngrams(note, LEAK_N) & forbidden[1])
 
 
 # ============================================================
 # 第 7 部分｜主程式：抽題、去重、切分、存檔
 # ============================================================
-CATS = {"single": 30, "multi": 22, "cancel": 10, "grid": 12, "no_action": 6, "refuse": 14, "off_topic": 6}
+CATS = {"single": 30, "multi": 22, "cancel": 12, "grid": 12, "no_action": 6, "refuse": 14, "off_topic": 3}
 SIM_LIMIT = 0.35
+LEAK_N = 8      # 遮掉工作名稱後，連續 8 字相同視為洩題
 
 def main():
     ap = argparse.ArgumentParser()
@@ -410,8 +443,7 @@ def main():
     seen, rows, unseen, rejected = set(), [], [], {}
     cats, weights = zip(*CATS.items())
 
-    def build(ho):
-        cat = rng.choices(cats, weights)[0]
+    def build(ho, cat):
         ctx, note, intent, cons, tr, held = make_example(rng, cat, ho)
         if note in seen: return None
         if max_sim(note, forbidden) > SIM_LIMIT or shares_6chars(note, forbidden):
@@ -424,14 +456,24 @@ def main():
                              {"role": "assistant", "content": json.dumps(answer, ensure_ascii=False)}],
                 "note": note, "trace": tr}
 
-    while len(rows) < a.n:                         # 一般題：不含測試專用說法
-        r = build(ho=False)
-        if r: rows.append(r)
-    tries = 0
-    while len(unseen) < a.n_unseen and tries < 200000:   # 未見說法題：一定含測試專用說法
-        tries += 1
-        r = build(ho=True)
-        if r and r["held_out_phrasing"]: unseen.append(r)
+    total = sum(weights)
+
+    def fill(target, ho, need_held):
+        """依類別配額抽題；某類抽不到新句子時印出警告"""
+        out = []
+        for cat, wgt in CATS.items():
+            quota, got, tries = round(target * wgt / total), 0, 0
+            while got < quota and tries < 50000:
+                tries += 1
+                r = build(ho, cat)
+                if r and (r["held_out_phrasing"] or not need_held):
+                    out.append(r); got += 1
+            if got < quota:
+                print(f"⚠️ {cat}：只產生 {got}/{quota} 題（說法變化不夠）")
+        return out
+
+    rows = fill(a.n, ho=False, need_held=False)        # 一般題：不含測試專用說法
+    unseen = fill(a.n_unseen, ho=True, need_held=True)  # 未見說法題：一定含測試專用說法
 
     rng.shuffle(rows)
     n_test = n_val = a.n // 10
