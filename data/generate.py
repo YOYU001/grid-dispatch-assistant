@@ -250,7 +250,7 @@ def make_example(rng, cat, ho):
         joiners = rng.sample(["，而且", "；另外", "，然後", "。還有，", "，另外"], k - 1)
         note = pre + parts[0] + "".join(j + p for j, p in zip(joiners, parts[1:]))
 
-    elif cat == "cancel" and rng.random() < 0.35:     # 改口：原本可以停 → 現在不能停
+    elif cat == "cancel" and rng.random() < 0.5:     # 改口：原本可以停 → 現在不能停
         w = rng.choice(["lora-finetune", "batch-summary", "rag-index"])
         name = pick(rng, ALIASES[w], ho); held = is_heldout(name, ALIASES[w])
         sw, until = scope(rng, ctx)
@@ -425,14 +425,14 @@ def shares_6chars(note, forbidden):
 # ============================================================
 # 第 7 部分｜主程式：抽題、去重、切分、存檔
 # ============================================================
-CATS = {"single": 30, "multi": 22, "cancel": 12, "grid": 12, "no_action": 6, "refuse": 14, "off_topic": 3}
+CATS = {"single": 18, "multi": 27, "cancel": 16, "grid": 16, "no_action": 8, "refuse": 12, "off_topic": 3}
 SIM_LIMIT = 0.35
 LEAK_N = 8      # 遮掉工作名稱後，連續 8 字相同視為洩題
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=4000)
-    ap.add_argument("--n_unseen", type=int, default=300)
+    ap.add_argument("--n", type=int, default=5000)
+    ap.add_argument("--n_unseen", type=int, default=400)
     ap.add_argument("--out", default="data/out")
     ap.add_argument("--seed", type=int, default=42)
     a = ap.parse_args()
@@ -475,7 +475,7 @@ def main():
     unseen = fill(a.n_unseen, ho=True, need_held=True)  # 未見說法題：一定含測試專用說法
 
     rng.shuffle(rows)
-    n_test = n_val = a.n // 10
+    n_test = n_val = 500
     splits = {"test": rows[:n_test], "validation": rows[n_test:n_test + n_val],
               "train": rows[n_test + n_val:], "test_unseen_phrasing": unseen}
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
