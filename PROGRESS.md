@@ -12,7 +12,8 @@
 - 釐清要訓練的模型：「電網調度秘書」（聽懂備註、白話說明、拒絕惡意指令），不做決策
 - 規劃訓練專案架構（流程見 `AGENT.md` 第 5 節）
 - 建立 `AGENT.md`、`PROGRESS.md`、`TODO.md`、三個 subagent 定義
-- 派 research agent 比較中文小型 Instruct 模型
+- 派 research agent 比較中文小型 Instruct 模型 → 推薦 Qwen3-4B-Instruct-2507（備案 Qwen3.5-4B）
+- 建立私人 GitHub repo `YOYU001/grid-dispatch-assistant` 並推上第一版（需安裝 Claude GitHub App 才能存取私人 repo）
 
 **決定了什麼**
 - 操作員備註用**中文** → SmolLM3 不支援中文，需換模型

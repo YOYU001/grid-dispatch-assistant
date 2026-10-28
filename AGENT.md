@@ -78,6 +78,7 @@ grid-dispatch-assistant/
 
 ## 8. 給接手 AI 的開場步驟
 
+0. 程式碼的正本在私人 repo `github.com/YOYU001/grid-dispatch-assistant`，先 clone 下來
 1. 讀本檔 → 讀 `PROGRESS.md` 最後一筆 → 讀 `TODO.md`
 2. 確認目前在流程第幾步
 3. 用 TODO list 列出這次要做的事，再開始
