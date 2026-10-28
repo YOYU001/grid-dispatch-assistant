@@ -24,6 +24,9 @@
 - 完成 `notebooks/01_explore_model_baseline.ipynb`：讀 model card/config、看 chat template、載入模型、5 題試考
 - code-review agent 審查後修正：拒絕判斷誤判、False/0 混淆、transformers 版本、時間格式、加「必要條件都有」指標
 
+- 釐清模型角色：「翻譯官＋解說員」，不做決策、不直接控制 GPU
+- 決定做三版本對照實驗：A 無思考、B 完整思考、C 迷你思考（設計見 AGENT.md 5.5 節）
+
 **下一步**
-- Yoyo 在 Colab T4 執行筆記本 01，回報成績單
+- Yoyo 在 Colab T4 執行筆記本 01，回報成績單（Yoyo 決定執行時間）
 - 依試考結果設計合成資料格式（SLA 政策表、GridEvent、備註範本）

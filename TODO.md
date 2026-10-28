@@ -14,6 +14,10 @@
 - 🟡 做 smol-course unit 1 quiz
 
 ## 模型與資料
+- 🟢 規則排程器要輸出「規則軌跡」，供 B、C 版本產生推理內容
+- 🟡 B 版本前：research agent 確認 Qwen3-4B-Thinking-2507 的 repo、授權、chat template
+- 🔴 B 版本訓練與評估等 Azure A100（輸出長，T4 太慢）
+- 🟡 耗電量測：評估時同步記錄 nvidia-smi 功率，算每題耗電
 - 🟡 第二階段：加入 tool calling（查電網、查工作、呼叫最佳化器）
 - 🟡 第二階段：NeMo 微調對照組、NeMo Guardrails
 - 🟡 第二階段：TensorRT-LLM / NIM 部署比較
