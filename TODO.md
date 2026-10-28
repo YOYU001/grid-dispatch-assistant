@@ -17,6 +17,8 @@
 - 🟡 做 smol-course unit 1 quiz
 
 ## 模型與資料
+- 🟡 Yoyo 填寫 `eval/human_cards.md` 20 張情境卡 → Claude 製作標準答案 → Yoyo 確認（真人測試集，不得訓練）
+- 🟡 第 2 年選項：調度決策是否需要「學習型」AI。優先考慮 (1) 備轉容量率／負載**預測模型**（提早知道何時吃緊）；(2) 自建資料中心排程模擬環境做強化學習或模仿最佳化器。Grid2Op、OPFData 是輸電網問題，不直接適用
 - 🟢 規則排程器要輸出「規則軌跡」，供 B、C 版本產生推理內容
 - 🟡 B 版本前：research agent 確認 Qwen3-4B-Thinking-2507 的 repo、授權、chat template
 - 🔴 B 版本訓練與評估等 Azure A100（輸出長，T4 太慢）
