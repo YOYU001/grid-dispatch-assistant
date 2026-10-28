@@ -31,7 +31,11 @@
 - 建立 Colab 儲存工具 `notebooks/snippets/colab_storage.py`（Drive＋HF Hub＋斷線接續），經 code-review 修正：半寫入 checkpoint、Drive 垃圾桶、公開 repo 防呆、台灣時區
 - 建立 skill `.claude/skills/colab-storage`
 
+- Yoyo 在 Colab T4 跑完筆記本 01：**5 題試考 5 項指標全部 100%**；Yoyo 人工檢查 explanation 認為 OK
+  - 解讀：天花板效應（題少、題目乾淨），只證明底子好；合成資料必須以刁鑽題為主才比得出訓練效果
+  - 套件：pip 警告 cudf 與 pyarrow 衝突，屬 Colab 預裝且不使用的套件，可忽略
+
 **下一步**
-- Yoyo 設定 Colab 密鑰 HF_TOKEN、Synology Cloud Sync
-- Yoyo 在 Colab T4 執行筆記本 01（加上儲存段 A、B、C、E），回報成績單
+- 設計合成資料：SLA 政策表、GridEvent、中文備註範本、規則排程器（含規則軌跡）
+- 合成資料上傳為 HF 私人 dataset，再進入 SFT + LoRA 訓練
 - 依試考結果設計合成資料格式（SLA 政策表、GridEvent、備註範本）
