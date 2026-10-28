@@ -7,6 +7,7 @@
 - 🔴 Azure A100/H100 GPU 額度申請中 → 到手後把訓練從 Colab 移過去
 - 🔴 Purdue GPU 資源申請中 → 確認型號、能否讀 nvidia-smi 功耗
 - 🟡 確認雲端 VM 能否用 `nvidia-smi -pl` 調功率上限（母專案第 1 步需要）
+- 🟡 量 FP8 耗電（「降載 B」按鈕）需選 **H100 或 L4／L40S**；A100、T4 不支援 FP8 原生計算，只能用來訓練
 
 ## 作業與帳號
 - 🟢 確認 HF 帳號 `yoyu001` 有 write token（推模型、推評估結果要用）
