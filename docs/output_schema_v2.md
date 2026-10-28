@@ -63,6 +63,7 @@
 
 「不作任何更動／先不動」= `flex_tier: 0` **且** `allow_pause: false`。
 「不能降速」只設 `flex_tier: 0`。「不能停」只設 `allow_pause: false`。
+「可以暫停」= `allow_pause: true` **且** `flex_tier: 3`（能停就代表怎麼降都可以）。
 
 ## 硬規則（一律 `refuse`）
 

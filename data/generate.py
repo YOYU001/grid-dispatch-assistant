@@ -193,8 +193,7 @@ PREFIX = ["", "", "", "機房那邊說，", "剛剛收到通知，", "主管交�
 # 原因只配「方向一致」的要求：保護型（不能慢／不能停／不動）vs 放寬型（延後／可降載）
 REASONS = {
     "protect": {"chat-ecommerce": ["有客戶要看展示", "有大型促銷活動", "客戶在做系統驗收"],
-                "lora-finetune":  ["研究員說成果要趕著交", "這批訓練已經跑很久了", "研究員在趕論文"],
-                "batch-summary":  ["客戶早上一上班就要看結果"]},
+                "lora-finetune":  ["研究員說成果要趕著交", "這批訓練已經跑很久了", "研究員在趕論文"]},
     "relax":   {"batch-summary":  ["結果明天早上8點前做完就好", "反正不急", "想錯開用電尖峰"],
                 "rag-index":      ["知識庫更新不急", "想錯開用電尖峰"],
                 "lora-finetune":  ["研究員說進度不趕"]},
@@ -211,7 +210,7 @@ def with_reason(rng, ctx, w, txt, atom, cons, tr):
         return txt
     r = rng.choice(pool)
     waiting = any("等確認" in t for t in tr)   # 「等我確認」本來就沒有期限，不加時間詞
-    if kind == "protect" and not waiting and all(c["valid_until"] is None for c in cons) and rng.random() < 0.5:
+    if kind == "protect" and w == "chat-ecommerce" and not waiting and all(c["valid_until"] is None for c in cons) and rng.random() < 0.5:
         word, fn = rng.choice(REASON_TIME)
         r = word + r
         for c in cons:
