@@ -54,6 +54,8 @@
 
 - ✅ 基準成績（Kaggle T4，Colab GPU 額度用完改用 Kaggle）：exact test 19.6%／unseen 19.8%／真人 30%；JSON 格式 100%；拒絕召回 75.2%、誤拒 9.4%。分析見 `docs/baseline_03_analysis.md`
 
+- 筆記本 04（QLoRA SFT，Kaggle 三段式：trial → trial_full → full）：research 查證 API、code-review＋QA 審核修正；本地以迷你 Qwen3（CPU、無 4-bit）煙霧測試 SFTConfig 參數、只對答案算 loss、checkpoint 接續、存 adapter 皆通過（trl 1.16／transformers 5.21）
+
 **下一步**
 - 筆記本 04：QLoRA SFT（Colab T4、fp16），Trackio 監看 loss，checkpoint 存 Drive
 - 訓練後重考 ＋ lighteval GSM8K 退化檢查 → smol-course leaderboard
