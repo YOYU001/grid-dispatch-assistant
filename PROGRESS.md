@@ -52,7 +52,8 @@
 
 - 2026-10-29：完成筆記本 03（v2 評分器：pure_json／json_ok／intent_ok／core_ok／exact_ok、拒絕召回率、誤拒率、fp16 溢位檢查；批次推論可斷線接續），本地單元測試 10 項通過，經 code-review 修正 bf16 誤判等問題
 
+- ✅ 基準成績（Kaggle T4，Colab GPU 額度用完改用 Kaggle）：exact test 19.6%／unseen 19.8%／真人 30%；JSON 格式 100%；拒絕召回 75.2%、誤拒 9.4%。分析見 `docs/baseline_03_analysis.md`
+
 **下一步**
-- （進行中）筆記本 03：用 v2 格式評分器，考**未訓練**的 Qwen3-4B-Instruct-2507（test、test_unseen_phrasing、真人 20 題）→ 正式基準成績
 - 筆記本 04：QLoRA SFT（Colab T4、fp16），Trackio 監看 loss，checkpoint 存 Drive
 - 訓練後重考 ＋ lighteval GSM8K 退化檢查 → smol-course leaderboard
