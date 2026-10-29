@@ -17,6 +17,8 @@
 - 🟡 做 smol-course unit 1 quiz
 
 ## 模型與資料
+- 🟡 筆記本 05（訓練後重考）：fp16 完整基底模型＋`PeftModel.from_pretrained(adapter)`（不要 4-bit，和基準同條件）；**換 RUN_NAME**，且 `load_done` 要比對 adapter id，否則會讀到基準舊答案；做 Kaggle 版
+- 🟡 smol-course 提交：lighteval 需合併後的完整模型 → 合併 adapter 後推一個 merged repo
 - 🟡 合成資料 v2：用 LLM 改寫備註增加說法變化（改寫後用規則檢查答案不變），比加題數更有效
 - 🟡 真人考卷擴充到 50～100 題（目前 20 題誤差約 ±20%）
 - 🟡 NAS 收集器（2026-10-22 起運作中）：持續累積到夏季，之後用真實黃／橘燈資料取代合成燈號
