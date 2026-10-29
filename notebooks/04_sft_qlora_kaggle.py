@@ -27,12 +27,12 @@ LORA_DROPOUT = 0.05    # 訓練時隨機遮掉 5%，防止死背
 
 # --- 訓練節奏 ---
 EPOCHS        = 2      # 整本題本讀幾遍
-LR            = 2e-4   # 學習率：QLoRA 常用 1e-4～2e-4；loss 爆掉就調小
+LR            = 1e-4   # 學習率：TRL 建議 adapter 用 1e-4；loss 爆掉就調小（5e-5）
 BATCH_SIZE    = 4      # 一次看幾題（T4 記憶體限制）
 GRAD_ACCUM    = 4      # 累積幾次才更新一次 → 有效批次 = 4 × 4 = 16 題
 MAX_LENGTH    = 1024   # 每題最多幾個 token（第 4 段會印出實際最長多少）
 EVAL_SUBSET   = 200    # 驗證集只取 200 題算 eval loss，省時間
-SAVE_EVERY    = 50     # 每幾步存一次 checkpoint 並推到 HF（斷線可接續）
+SAVE_EVERY    = 100    # 每幾步存一次 checkpoint 並推到 HF（斷線可接續）；全部約 500 步
 
 HUB_MODEL_ID = None    # 第 3 段登入後自動設成「你的帳號/grid-dispatch-{RUN_NAME}」
                        # 想從頭重新訓練（不接續）→ 換一個 RUN_NAME 即可
@@ -64,6 +64,8 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+# Qwen 的 pad token 若被設成別的特殊符號，4-bit 訓練可能出現 NaN（已知問題）
+assert tokenizer.pad_token == "<|endoftext|>", f"pad token 不對：{tokenizer.pad_token}"
 raw = load_dataset(DATASET_ID)
 
 def to_prompt_completion(ex):
@@ -121,7 +123,7 @@ config = SFTConfig(
     learning_rate=LR,
     lr_scheduler_type="cosine",           # 學習率先升後慢慢降
     warmup_ratio=0.05,                    # 前 5% 的步數慢慢加速
-    max_grad_norm=1.0,                    # 梯度太大就截斷，防止 fp16 爆掉
+    max_grad_norm=0.5,                    # 梯度太大就截斷，防止 fp16 爆掉
     optim="paged_adamw_8bit",             # 省記憶體的優化器
     fp16=not USE_BF16, bf16=USE_BF16,
     gradient_checkpointing=True,
@@ -213,4 +215,4 @@ if not TRIAL:
                         repo_id=HUB_MODEL_ID, commit_message=f"{RUN_NAME}: training logs")
     print(f"☁️ LoRA 外掛已上傳（私人）：https://huggingface.co/{HUB_MODEL_ID}")
 else:
-    print("🧪 試跑結束。確認 loss 有下降後，把第 2 段 TRIAL 改成 False，再 Save Version → Save & Run All")
+    print("🧪 試跑結束。確認 loss 有下降、沒有 NaN 後，把第 2 段 TRIAL 改成 False，再 Save Version → Save & Run All")
