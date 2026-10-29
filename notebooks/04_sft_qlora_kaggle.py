@@ -90,8 +90,7 @@ eval_ds = eval_ds.map(to_prompt_completion, remove_columns=[c for c in eval_ds.c
 def n_tokens(ex):
     text = tokenizer.apply_chat_template(ex["prompt"] + ex["completion"], tokenize=False)
     return len(tokenizer(text)["input_ids"])
-lens = sorted(n_tokens(ex) for ex in train_ds) + [n_tokens(ex) for ex in eval_ds]   # 全部檢查，約十幾秒
-lens.sort()
+lens = sorted([n_tokens(ex) for ex in train_ds] + [n_tokens(ex) for ex in eval_ds])   # 全部檢查，約十幾秒
 print(f"訓練題數：{len(train_ds)}｜驗證（抽樣）：{len(eval_ds)}")
 print(f"每題長度：中位數 {lens[len(lens)//2]}、最長 {lens[-1]} tokens（MAX_LENGTH={MAX_LENGTH}）")
 assert lens[-1] < MAX_LENGTH, "有題目超過 MAX_LENGTH，答案結尾會被截斷！請調大 MAX_LENGTH"
@@ -239,6 +238,8 @@ try:
         plt.plot(eval_log["step"], eval_log["eval_loss"], "o-", label="eval loss")
     plt.xlabel("step"); plt.ylabel("loss"); plt.title(RUN_NAME); plt.legend(); plt.grid(alpha=0.3)
     plt.savefig(f"{OUT_DIR}_loss.png", dpi=120, bbox_inches="tight")
+    from IPython.display import Image, display
+    display(Image(f"{OUT_DIR}_loss.png"))   # 互動模式下直接在畫面上看到圖
     print(train_log[["step", "loss"]].tail(5).to_string(index=False))
     if len(eval_log):
         print(eval_log[["step", "eval_loss"]].to_string(index=False))
