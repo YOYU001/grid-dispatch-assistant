@@ -23,3 +23,11 @@ description: 在 Google Colab 筆記本中設定持久儲存（Google Drive）�
 5. `push_to_hub` 一律私人 repo，且上傳前檢查是否私人。
 6. 台電內部資料不得進 Drive 的 `data/` 或 Hub。
 7. NAS 備份：用 Synology Cloud Sync 單向下載 Drive 的 `grid-dispatch-assistant/`，**不要**把 NAS 開放給 Colab 連入。
+
+## Kaggle 替代方案（Colab GPU 額度用完時）
+程式碼：`notebooks/snippets/kaggle_setup.py`（取代第 2、5、10 段，其他段不變）
+- 密鑰：Add-ons → Secrets（`kaggle_secrets.UserSecretsClient`）
+- 存檔：`/kaggle/working` 關 session 就清空 → 結果推到 HF 私人 repo `{user}/grid-dispatch-results`
+- 輸入檔：Add Input → Upload，用 `glob('/kaggle/input/**/檔名')` 找路徑
+- GPU T4 × 2：4B 模型用 `device_map={"": 0}` 只放第 1 張
+- 需先完成 Kaggle 手機驗證才能開 GPU 與網路
