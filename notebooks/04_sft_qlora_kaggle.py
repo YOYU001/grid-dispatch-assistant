@@ -172,6 +172,17 @@ trainer = SFTTrainer(
 )
 trainer.model.print_trainable_parameters()   # 只有約 1% 的參數要訓練
 
+# fp16 訓練時，「要訓練的參數」必須是 fp32（GradScaler 不接受 bf16）
+# 新版套件有時會把 LoRA 外掛建成 bf16 → 這裡統一轉成 fp32；T4 以外（bf16）不受影響
+from collections import Counter
+before = Counter(str(p.dtype) for p in trainer.model.parameters() if p.requires_grad)
+for p in trainer.model.parameters():
+    if p.requires_grad and p.dtype != torch.float32:
+        p.data = p.data.float()
+after = Counter(str(p.dtype) for p in trainer.model.parameters() if p.requires_grad)
+print(f"可訓練參數精度：{dict(before)} → {dict(after)}")
+assert set(after) == {"torch.float32"}, "還有非 fp32 的可訓練參數！"
+
 resume = None
 if MODE != "trial":
     api = HfApi()
