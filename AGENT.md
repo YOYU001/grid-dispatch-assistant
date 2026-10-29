@@ -91,7 +91,9 @@ grid-dispatch-assistant/
 ├── scheduler/        ← 規則排程器（當老師）
 ├── train/            ← SFT + LoRA 訓練腳本、設定檔
 ├── eval/             ← 自訂考卷評估＋lighteval
-└── notebooks/        ← Colab 筆記本
+└── notebooks/        ← 筆記本（每個階段一本：01 認識模型 → 02 上傳資料 → 03 評估 → 04 訓練）
+    ├── *_kaggle.py／.ipynb ← Kaggle 版（目前主力；.py 為正本，.ipynb 由 tools/py2ipynb.py 產生）
+    └── tools/py2ipynb.py   ← 分段 .py → .ipynb 轉換器
 ```
 
 ## 8. 給接手 AI 的開場步驟

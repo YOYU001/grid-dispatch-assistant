@@ -4,7 +4,7 @@
 # 硬體：Kaggle GPU T4（fp16）
 #
 # 事前設定：Settings → Accelerator 選 GPU T4 x2、Settings → Internet 打開（需手機驗證）、
-#           Add-ons → Secrets 加 HF_TOKEN 並打勾；第 1 段 pip 那行要「去掉開頭的 #」才會安裝
+#           Add-ons → Secrets 加 HF_TOKEN（要 Write 權限）並打勾；第 1 段 pip 那行要「去掉開頭的 #」才會安裝
 # 使用流程：
 #   ① MODE = "trial"：互動模式 Run All → 跑 10 步，看 loss 有沒有下降、每步幾秒、記憶體夠不夠
 #   ② MODE = "trial_full"：互動模式 Run All → 跑 20 步，順便測「存檔、推上 HF、評估」整條流程
@@ -52,9 +52,10 @@ from kaggle_secrets import UserSecretsClient
 from huggingface_hub import login, whoami
 
 try:
-    login(token=UserSecretsClient().get_secret("HF_TOKEN"), add_to_git_credential=False)
+    hf_token = UserSecretsClient().get_secret("HF_TOKEN")
 except Exception:
     raise RuntimeError("讀不到 HF_TOKEN！請到 Add-ons → Secrets 新增 HF_TOKEN 並打勾") from None
+login(token=hf_token, add_to_git_credential=False)   # 這裡出錯＝token 打錯或過期，請到 HF 重新產生
 HF_USER = whoami()["name"]
 HUB_MODEL_ID = f"{HF_USER}/grid-dispatch-{RUN_NAME}"
 print(f"✅ Hugging Face：{HF_USER}｜模型會存到（私人）：{HUB_MODEL_ID}")
