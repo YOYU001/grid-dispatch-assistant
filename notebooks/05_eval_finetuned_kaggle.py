@@ -12,6 +12,8 @@
 
 # ===== 第 1 段｜安裝套件（版本跟筆記本 04 訓練時一樣） =====
 # !pip install -q "transformers==5.22.0" "peft==0.21.2" accelerate datasets huggingface_hub
+# Kaggle 預裝的 torchao 太舊，新版 peft 載入外掛時會報錯；我們用不到它，直接移除
+# !pip uninstall -y -q torchao
 
 # ===== 第 2 段｜主要設定（只需要改這裡） =====
 import os
