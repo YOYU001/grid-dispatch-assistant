@@ -26,6 +26,7 @@
 | 進度紀錄 | 每次工作結束更新 `PROGRESS.md` |
 | 待辦紀錄 | 重要但現在做不了的事寫進 `TODO.md` |
 | Skills | 重複出現的流程做成 skill 備用 |
+| 看懂程式架構 | 用 `graphify` skill（`.claude/skills/graphify`）：預設 `GRAPHIFY_QUERY_LOG_DISABLE=1 graphify update .` 純程式模式，不呼叫 LLM、資料不離開本機；改評分器等共用函式前先查所有副本 |
 | 資料安全 | 台電內部資料**絕不**進這個 repo；只用公開資料與合成資料 |
 | 儲存 | Colab 一律用 `colab-storage` skill：Drive 存檔＋HF Hub 私人 repo；NAS 用 Cloud Sync 從 Drive 備份 |
 | 運算環境 | 目前用 **Colab 免費 T4**（fp16、無 bf16、約 15 GB）；程式要以 T4 為準。精度判斷用 `torch.cuda.get_device_capability()[0] >= 8`，**不要用** `is_bf16_supported()`（T4 會誤判） |

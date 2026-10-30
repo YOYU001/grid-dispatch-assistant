@@ -71,6 +71,9 @@
 
 - 2026-10-30：完成筆記本 05（微調後重考，13 段）：鎖定外掛檔指紋與資料版本、讀 run_config 確認最終版外掛、關掉外掛重考 32 題做環境檢查、合併前後一致性檢查、與基準同評分器比較、錯題分類；本地以基準作答驗證可重現 19.6／19.8／30%；code-review 審查後修正
 
+- 2026-10-30：新增 skill `graphify`（Graphify-Labs/graphify，PyPI `graphifyy` 0.9.97，Apache-2.0）：把 repo 建成知識圖譜，可查函式關係與副本；加上本專案規則（預設純程式模式、不設 Gemini key、不碰台電內部文件、關閉查詢紀錄）；`graphify-out/` 列入 .gitignore。本 repo 測試：222 節點、326 條關係、16 群
+- 筆記本 05：Kaggle 上 peft 0.21 與預裝 torchao 0.10 衝突 → 第 1 段移除 torchao
+
 **下一步**
 - 筆記本 05：Kaggle 試跑（SAMPLE_N=20）→ 正式重考（test／unseen／真人 20 題），與基準比較
 - 訓練後重考 ＋ lighteval GSM8K 退化檢查 → smol-course leaderboard
