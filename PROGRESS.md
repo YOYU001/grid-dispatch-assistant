@@ -63,6 +63,12 @@
   - trial_full（20 步）：train loss→0.35、eval loss 0.91→0.38（未過擬合）；eval／push／上傳流程正常
   - 正式訓練預估約 3 小時（496 步）；維持 batch 4×4 不改
 
+- 2026-10-30：✅ A 版正式訓練完成（Kaggle T4，496 步，163 分鐘，GPU 峰值 5.9 GB）
+  - 外掛：HF 私人 `yoyu001/grid-dispatch-A-instruct-qlora-v1`；執行紀錄 `notebooks/runs/04_A-full-v1.ipynb`
+  - train loss 約 0.0001、eval loss 0.0003（第 60 步左右就已收斂）
+  - 解讀：合成資料由模板產生、可預測性極高，模型幾乎學會了產生器本身；eval 也來自同一產生器，所以低 loss 不代表真實能力 → 要看 unseen 與真人題
+  - 待驗證：2 遍可能過多（消融實驗：0.25／0.5／1 遍）；GSM8K 是否退化
+
 **下一步**
-- 筆記本 04：MODE="full"，Kaggle Save & Run All 背景訓練
+- 筆記本 05：訓練後重考（test／unseen／真人 20 題），與基準比較
 - 訓練後重考 ＋ lighteval GSM8K 退化檢查 → smol-course leaderboard
