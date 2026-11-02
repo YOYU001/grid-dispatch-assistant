@@ -20,8 +20,10 @@
 - 環境法規 LLM 延後到本專案階段 6 之後
 - 每次新進度／規劃前先看 graphify 進度圖
 
+- 筆記本 05 試跑（每份 20 題）：exact test 100%／unseen 85%／真人 75%（基準 19.6／19.8／30%）；錯題 8 題，含 1 題誤拒並自編規則。分析見 `docs/eval_05_trial_analysis.md`
+
 **下一步**
-- 筆記本 05：Kaggle 試跑 → 正式重考，與基準比較；GSM8K 退化檢查
+- 筆記本 05：正式重考（SAMPLE_N=None），與基準比較；GSM8K 退化檢查
 - 階段 1：資料 v2（去重、改寫＋規則驗證、資料量實驗）
 - research agent：確認 Nemotron-3-Nano-4B 在 T4 能否 QLoRA、選 A 組第三個模型
 
