@@ -124,4 +124,4 @@ grid-dispatch-assistant/
 1. 讀本檔 → 讀 `graphify-out/GRAPH_REPORT.md`（沒有就先讀 `docs/graph/GRAPH_REPORT.md` 快照，並依 graphify skill 重建）→ 讀 `PROGRESS.md` 最後一筆 → 讀 `TODO.md` → 讀 `docs/TRAINING_PLAN.md`
 2. 確認目前在流程第幾步
 3. 用 TODO list 列出這次要做的事，再開始
-4. 工作結束：更新 `PROGRESS.md`／`TODO.md` → 執行 `/graphify . --update` 更新進度圖 → 把 `graph.html`、`GRAPH_REPORT.md` 複製到 `docs/graph/`
+4. 工作結束：更新 `PROGRESS.md`／`TODO.md` → 執行 `/graphify . --update` 更新進度圖 → `python tools/graph_snapshot.py` 存快照到 `docs/graph/`（會把繪圖套件嵌進網頁，否則預覽看不到圖）
