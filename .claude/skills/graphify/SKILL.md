@@ -11,7 +11,11 @@ description: "Use for any question about a codebase, its architecture, file rela
 >
 > 1. **安裝**：`uv tool install graphifyy==0.9.97`（注意是兩個 y；PyPI 上其他 `graphify*` 套件與官方無關）。沒有 uv 就用 `pipx install graphifyy==0.9.97`。
 > 2. **預設只用「純程式」模式**：`GRAPHIFY_QUERY_LOG_DISABLE=1 graphify update .`。這個模式用 tree-sitter 在本機解析程式碼，不呼叫任何 LLM、不需要 API key、資料不離開本機。
-> 3. **完整流程（`/graphify .`，會用 subagent 讀 docs 做語意抽取）只在 Yoyo 明確要求時才跑。**
+> 3. **完整流程（`/graphify .`，會用 subagent 讀 docs 做語意抽取）只在 Yoyo 明確要求時才跑。** 例外（2026-11-02 Yoyo 同意）：「專案進度圖」固定用完整流程，因為進度、規劃與決策都寫在文件裡，純程式模式畫不出來。
+>    - 首次建立：`/graphify .`；之後每次工作結束：`/graphify . --update`（只重讀有改動的文件）
+>    - 不讀的檔案列在 repo 根目錄 `.graphifyignore`（上游 skill 原文、作答紀錄、jsonl、執行紀錄、快照本身）
+>    - 跑完把 `graphify-out/graph.html` 與 `graphify-out/GRAPH_REPORT.md` 複製到 `docs/graph/`（快照會進 repo，`graphify-out/` 本身仍不進 repo）
+>    - **每次開始新進度或新規劃前，先讀 `GRAPH_REPORT.md`**（見 `AGENT.md` 第 3、8 節）
 > 4. **絕對不要設定 `GEMINI_API_KEY` / `GOOGLE_API_KEY`**：設了以後，文件會送到 Google 做抽取。
 > 5. **絕不對台電內部文件執行 graphify**（這個 repo 本來就不能放內部資料）。
 > 6. **查詢紀錄**：所有指令都加 `GRAPHIFY_QUERY_LOG_DISABLE=1`，不在 `~/.cache` 留下問題紀錄。

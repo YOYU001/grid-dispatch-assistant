@@ -5,6 +5,28 @@
 
 ---
 
+## 2026-11-02（第 2 次）
+
+**做了什麼**
+- 對照兩份 NVIDIA JD（AI Software Engineer ML/NLP/LLM、Deep Learning Solution Architect），逐條確認專案能否練到
+- 查證 Nemotron 最新小模型：Nemotron 3 Nano 4B（model card 僅列英文）、Nemotron 3 Nano 30B-A3B（Mamba＋Transformer 混合 MoE）、Nemotron Nano 9B v2
+- 建立 `docs/TRAINING_PLAN.md`：定位、JD 對照、A／B／C 三組模型比較、七階段規劃、時程與硬體
+- 更新 `AGENT.md`（定位、5.6 節、先看進度圖規則、開場與收尾步驟）、`TODO.md`（依階段重排）
+- 用 graphify（完整模式，含文件語意抽取）畫出專案進度關係圖，快照存 `docs/graph/`
+
+**決定了什麼**
+- 主角是 LLM，排程器是 Agent 呼叫的工具
+- 多模型比較：A 組 Qwen3-4B／Nemotron-3-Nano-4B／第三個待選（T4）；B 組架構、C 組 MoE 等 A100
+- 環境法規 LLM 延後到本專案階段 6 之後
+- 每次新進度／規劃前先看 graphify 進度圖
+
+**下一步**
+- 筆記本 05：Kaggle 試跑 → 正式重考，與基準比較；GSM8K 退化檢查
+- 階段 1：資料 v2（去重、改寫＋規則驗證、資料量實驗）
+- research agent：確認 Nemotron-3-Nano-4B 在 T4 能否 QLoRA、選 A 組第三個模型
+
+---
+
 ## 2026-10-28（第 1 次）
 
 **做了什麼**

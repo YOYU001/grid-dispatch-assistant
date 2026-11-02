@@ -1,0 +1,7 @@
+# graphify 不需要讀的檔案（上游 skill 原文、作答紀錄、大型資料、筆記本執行紀錄）
+.claude/skills/graphify/
+results/
+eval/*.jsonl
+notebooks/runs/
+notebooks/*.ipynb
+docs/graph/
