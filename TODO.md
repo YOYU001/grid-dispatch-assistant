@@ -18,7 +18,8 @@
 
 ## 模型與資料
 - 🟡 筆記本 05（訓練後重考）：fp16 完整基底模型＋`PeftModel.from_pretrained(adapter)`（不要 4-bit，和基準同條件）；**換 RUN_NAME**，且 `load_done` 要比對 adapter id，否則會讀到基準舊答案；做 Kaggle 版
-- 🟡 smol-course 提交：lighteval 需合併後的完整模型 → 合併 adapter 後推一個 merged repo
+- 🟡 smol-course 提交：排行榜讀結果 dataset 的 `results` config，找 `gsm8k` 的 `extractive_match`；結果 dataset 可能需公開；PR 內文附實際指令並說明是 Kaggle T4 本機跑（非 hf jobs）
+- 🟡 lighteval GSM8K 生成上限寫死 256 token，若截斷率高，可用 `--custom-tasks` 自訂較長的 gsm8k 再比一次
 - 🟡 合成資料 v2：用 LLM 改寫備註增加說法變化（改寫後用規則檢查答案不變），比加題數更有效
 - 🟡 真人考卷擴充到 50～100 題（目前 20 題誤差約 ±20%）
 - 🟡 NAS 收集器（2026-10-22 起運作中）：持續累積到夏季，之後用真實黃／橘燈資料取代合成燈號

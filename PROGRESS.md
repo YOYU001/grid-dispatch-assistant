@@ -22,9 +22,10 @@
 
 - 筆記本 05 試跑（每份 20 題）：exact test 100%／unseen 85%／真人 75%（基準 19.6／19.8／30%）；錯題 8 題，含 1 題誤拒並自編規則。分析見 `docs/eval_05_trial_analysis.md`
 - ✅ 筆記本 05 正式重考（914 題）：exact test 98.6%／unseen 81.2%／真人 75%（基準 19.6／19.8／30%）；拒絕召回 96.6%、誤拒 0.1%；本地重算與 Kaggle 0 差異。86 題錯題中 74 題在 unseen，集中在「不動」「可以暫停」兩條展開規則與相對時間；2 題把「跳過人員確認」照做。分析見 `docs/eval_05_full_analysis.md`
+- 筆記本 06（合併外掛推完整模型 `yoyu001/grid-dispatch-A-instruct-merged-v1`）與 07（lighteval 0.13.0 GSM8K，原模型 vs 微調後）：直接讀 lighteval 原始碼確認新版任務名為 `gsm8k|0`（課程範例的 `lighteval|gsm8k|0|0` 已過時）、生成長度寫死 256 token；code-review 審查後修正：合併檢查改用一致率 ≥99.9%、跳過舊結果前比對題數與模型版本、原模型鎖版本、chat template 一致檢查、截斷率檢查、確認 repo 私人
 
 **下一步**
-- GSM8K 退化檢查 → 合併外掛 → smol-course 提交（提交前 qa agent 驗證）
+- Kaggle 跑 06 → 07 試跑（MAX_SAMPLES=20）→ 07 正式 → smol-course 提交（提交前 qa agent 驗證）
 - 資料 v2（階段 1），依 `docs/eval_05_full_analysis.md` 的建議補說法
 - 階段 1：資料 v2（去重、改寫＋規則驗證、資料量實驗）
 - research agent：確認 Nemotron-3-Nano-4B 在 T4 能否 QLoRA、選 A 組第三個模型

@@ -10,7 +10,7 @@
 # ============================================================
 
 # ===== 第 1 段｜安裝套件（版本跟筆記本 04、05 一樣） =====
-# !pip install -q "transformers==5.22.0" "peft==0.21.2" accelerate datasets huggingface_hub
+# !pip install -q "transformers==5.22.0" "peft==0.21.2" "accelerate>=1.0" datasets huggingface_hub
 # Kaggle 預裝的 torchao 太舊，新版 peft 載入外掛時會報錯；我們用不到它，直接移除
 # !pip uninstall -y -q torchao
 
@@ -83,12 +83,27 @@ def ask(m):
 before = ask(model)
 print("合併前回答：", before)
 
-# ===== 第 5 段｜合併外掛，確認「合併後」回答一樣 =====
-model = model.merge_and_unload()       # 把外掛的修正寫進原模型的權重，拿掉外掛的殼
+# ===== 第 5 段｜合併外掛，確認合併前後幾乎一樣（跟筆記本 05 同一套標準） =====
+# 不要求逐字相同：fp16 合併會多一次捨入，長回答可能在某個字分岔；改看「每個位置最有把握的字」一致率
+text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) + before
+ids = tokenizer(text, return_tensors="pt").to(model.device)
+with torch.no_grad():
+    lg_before = model(**ids).logits
+    model.merge_adapter()                      # 先「可還原」地合併
+    lg_after = model(**ids).logits
+agree = (lg_before.argmax(-1) == lg_after.argmax(-1)).float().mean().item() * 100
+print(f"合併前後一致率 {agree:.2f}%")
+assert torch.isfinite(lg_after).all(), "合併後出現 inf/NaN（fp16 溢位），不要上傳"
+assert agree >= 99.9, "合併前後差異偏大！先不要上傳，把數字貼給 Claude 看"
+del lg_before, lg_after
+model = model.merge_and_unload()               # 已經合併過，這裡只是拿掉外掛的殼
+del base                                       # base 和 model 是同一份 GPU 權重，刪名字避免誤用
 after = ask(model)
 print("合併後回答：", after)
-assert before == after, "合併前後回答不同！先不要上傳，把兩段回答貼給 Claude 看"
-print("✅ 合併前後回答一致")
+if before == after:
+    print("✅ 合併前後回答逐字相同")
+else:
+    print("⚠️ 逐字不同（fp16 捨入造成），一致率已達標，可以繼續；請把兩段回答貼給 Claude 看")
 
 # ===== 第 6 段｜存成完整模型（safetensors）＋ 寫模型說明卡 =====
 from pathlib import Path
@@ -110,7 +125,7 @@ tags: [qlora, sft, trl, smol-course, grid-dispatch]
 任務：讀懂電網調度操作員的中文備註，轉成限制條件 JSON，並拒絕違反 SLA 的指令。模型**不做調度決策**。
 
 - 訓練資料：`{HF_USER}/grid-dispatch-notes-zh`（以規則產生的合成資料，非真實操作員紀錄）
-- 訓練：{steps} 步，Kaggle T4，fp16
+- 訓練：{steps} 步，Kaggle T4，fp16；合併精度 {str(DTYPE).replace('torch.', '')}
 - 自訂考卷（exact，訓練前 → 後）：test 19.6% → 98.6%｜沒看過的說法 19.8% → 81.2%｜真人 20 題 30% → 75%
 - 限制：對沒看過的說法較不穩定；輸出必須經安全驗證與人員核准才可執行
 
@@ -123,8 +138,11 @@ assert 7 < size_gb < 9, "檔案大小不像 4B fp16 模型（約 8 GB），請�
 
 # ===== 第 7 段｜推上 HF，並重新下載設定檔確認 =====
 api.create_repo(MERGED_ID, private=PRIVATE, exist_ok=True)
-api.upload_folder(folder_path=str(OUT), repo_id=MERGED_ID,
-                  commit_message=f"merge {ADAPTER_ID}@{ADAPTER_SHA[:8]} into {MODEL_ID}")
+if PRIVATE:
+    assert api.repo_info(MERGED_ID).private, f"{MERGED_ID} 不是私人 repo！請到 HF 網頁改成 Private 再重跑這段"
+info = api.upload_folder(folder_path=str(OUT), repo_id=MERGED_ID,
+                         commit_message=f"merge {ADAPTER_ID}@{ADAPTER_SHA[:8]} into {MODEL_ID}")
+print(f"上傳版本：{info.oid[:8]}（筆記本 07 會顯示同一個版本號）")
 files = api.list_repo_files(MERGED_ID)
 print(f"HF 上的檔案：{sorted(files)}")
 assert any(f.endswith(".safetensors") for f in files) and "config.json" in files, "上傳不完整！"
