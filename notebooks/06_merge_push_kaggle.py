@@ -83,27 +83,45 @@ def ask(m):
 before = ask(model)
 print("合併前回答：", before)
 
-# ===== 第 5 段｜合併外掛，確認合併前後幾乎一樣（跟筆記本 05 同一套標準） =====
-# 不要求逐字相同：fp16 合併會多一次捨入，長回答可能在某個字分岔；改看「每個位置最有把握的字」一致率
+# ===== 第 5 段｜合併外掛，確認合併前後幾乎一樣 =====
+# 不要求逐字相同：fp16 合併會多一次捨入。改看兩件事：
+#   (1) 每個位置「最有把握的字」有幾個換掉了；(2) 換掉的位置是不是本來就「兩個字差不多」（接近平手）
+# 只檢查 1 題（約 500 個位置），換掉 1 個就只剩 99.8%，所以不能用 99.9% 當門檻（筆記本 05 是 4 題一起算）
+import json as _json
+if any(getattr(mod, "merged", False) for mod in model.modules()):
+    model.unmerge_adapter()                    # 上次跑到一半已經合併過 → 先還原，這段可以安全重跑
 text = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) + before
 ids = tokenizer(text, return_tensors="pt").to(model.device)
 with torch.no_grad():
-    lg_before = model(**ids).logits
+    lg_before = model(**ids).logits[0].float()
     model.merge_adapter()                      # 先「可還原」地合併
-    lg_after = model(**ids).logits
-agree = (lg_before.argmax(-1) == lg_after.argmax(-1)).float().mean().item() * 100
-print(f"合併前後一致率 {agree:.2f}%")
+    lg_after = model(**ids).logits[0].float()
 assert torch.isfinite(lg_after).all(), "合併後出現 inf/NaN（fp16 溢位），不要上傳"
-assert agree >= 99.9, "合併前後差異偏大！先不要上傳，把數字貼給 Claude 看"
-del lg_before, lg_after
+top2 = lg_before.topk(2, dim=-1).values
+margin = top2[:, 0] - top2[:, 1]               # 第一名比第二名高多少；越小代表越接近平手
+diff = (lg_before.argmax(-1) != lg_after.argmax(-1))
+n_pos, n_diff = diff.numel(), int(diff.sum())
+agree = 100 - n_diff / n_pos * 100
+max_margin = margin[diff].max().item() if n_diff else 0.0
+print(f"檢查 {n_pos} 個位置：換掉 {n_diff} 個（一致率 {agree:.2f}%）｜換掉的位置中，原本第一名最多領先 {max_margin:.2f}")
+print(f"合併造成的最大 logit 變化：{(lg_before - lg_after).abs().max().item():.3f}")
+ok = agree >= 99.0 and max_margin < 1.0        # 換得很少，而且只換在接近平手的地方 → 正常的捨入差異
+del lg_before, lg_after, top2, margin
+assert ok, "合併前後差異偏大（不只是捨入）！先不要上傳，把上面兩行數字貼給 Claude 看"
 model = model.merge_and_unload()               # 已經合併過，這裡只是拿掉外掛的殼
 del base                                       # base 和 model 是同一份 GPU 權重，刪名字避免誤用
 after = ask(model)
 print("合併後回答：", after)
-if before == after:
-    print("✅ 合併前後回答逐字相同")
-else:
-    print("⚠️ 逐字不同（fp16 捨入造成），一致率已達標，可以繼續；請把兩段回答貼給 Claude 看")
+
+# 最終判斷看「答案內容」：兩邊 JSON 的意圖與限制條件要完全一樣（說明文字的用字可以不同）
+def core(t):
+    try:
+        d = _json.loads(t)
+        return d.get("intent"), sorted(_json.dumps(c, sort_keys=True, ensure_ascii=False) for c in d.get("constraints", []))
+    except Exception:
+        return None
+assert core(before) is not None and core(before) == core(after), "合併前後的答案內容不同！先不要上傳，把兩段回答貼給 Claude 看"
+print("✅ 合併前後答案內容相同" + ("（逐字相同）" if before == after else "（說明文字有些微差異，屬正常）"))
 
 # ===== 第 6 段｜存成完整模型（safetensors）＋ 寫模型說明卡 =====
 from pathlib import Path
