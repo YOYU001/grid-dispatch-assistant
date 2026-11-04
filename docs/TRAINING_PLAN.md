@@ -140,10 +140,40 @@ FP8 需 H100 或 L4／L40S（A100、T4 不支援）。
 
 **產出：** 「品質 × 速度 × 記憶體 × 耗電」總表（SA 面試核心作品）
 
+#### 5.1 合併 vs 多外掛部署（multi-LoRA serving）
+- 背景：合併版跑得快、工具支援多；外掛版可「一個原模型同時掛很多任務」，省記憶體、可快速抽換
+- 實驗：同一張 GPU 上比較
+  - (a) 合併模型單獨部署
+  - (b) 原模型＋1 個外掛
+  - (c) 原模型＋多個外掛同時服務（A／B／C 三版本、Nemotron 外掛等）
+- 引擎：vLLM（開源）vs **NVIDIA NIM**（LoRA 外掛動態載入）vs **TensorRT-LLM**（LoRA 支援）
+- 量：tokens/s、首字時間、p95 延遲、VRAM、每千 token 耗電、正確率（確認外掛版與合併版答案一致）
+- 面試題：「客戶有 10 個微調任務，你會怎麼部署？」→ 用數據回答
+
+#### 5.2 API 評測（業界主流的評測方式）
+- 觀念：評測工具只負責「送題目到網址、收答案、打分數」，不管模型是否合併、用哪個引擎
+- 做法：vLLM／NIM 架成 OpenAI 相容 API → 評測工具透過 API 考試
+  - **NVIDIA NeMo Evaluator**：評估架好的模型（效能與安全）；與自訂考卷、GSM8K 對照
+  - 開源對照：lighteval 的 endpoint／litellm 後端、lm-evaluation-harness
+- 好處：測的就是上線的樣子（含引擎、量化、外掛），正確率與速度一次量完
+- 對照組：階段 0 的離線評估（筆記本 05、07）→ 確認 API 評測分數一致
+
+#### 5.3 本階段 NVIDIA 工具清單（使用前由 research agent 確認最新版本、授權與硬體需求）
+| 工具 | 用途 | 對照的開源工具 |
+|---|---|---|
+| NVIDIA NIM | 一鍵部署推論 API、LoRA 外掛動態載入 | vLLM |
+| TensorRT-LLM | 編譯最佳化推論引擎、FP8／INT4、KV cache 調校 | vLLM、HF generate |
+| Triton Inference Server | 多模型服務、批次排程 | vLLM 內建伺服器 |
+| NeMo Evaluator | API 評測（效能、安全） | lighteval、lm-evaluation-harness |
+| nvidia-smi／DCGM | GPU 功率、使用率、記憶體監控 | — |
+
+⚠️ 觀察紀錄：lighteval 0.13 的「外掛模式」實際上會在背後用 fp16 合併並存檔（`adapter_model.py`），沒有一致性檢查 → 本專案改為自己合併並驗證（筆記本 06）。
+
 ### 階段 6：Agent＋RAG（4–5 月，T4 即可）
 - 工具呼叫：查電網、查工作、呼叫排程器、送核准；評估工具選擇與參數正確率
 - RAG：台電需量反應規定；評估 Recall@k、引用正確率、找不到時是否亂編
 - NeMo Guardrails vs 自寫規則：擋惡意指令的效果
+- Agent 的評測沿用 5.2 的 API 評測流程（NeMo Evaluator＋自訂工具呼叫考卷）
 
 **產出：** Agent 流程圖、RAG 評估報告、對抗測試結果
 

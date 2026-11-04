@@ -41,6 +41,8 @@
 - 🟡 階段 3：全參數（0.6B）、DPO（誤拒／漏拒）、GRPO（規則排程器當評分器）、蒸餾 4B→0.6B；訓練加速對照（packing、Unsloth、Liger）；epoch 與 r 消融
 - 🔴 階段 4（等 A100）：Nemotron-Nano-9B-v2 架構比較；Qwen3-30B-A3B vs Nemotron-3-Nano-30B-A3B MoE；NeMo vs HF PEFT
 - 🔴 階段 5（等 H100／L4）：HF／vLLM／TRT-LLM／NIM × FP16／FP8／INT4 × batch／KV cache × 功率上限，量每千 token 耗電
+- 🔴 階段 5.1：合併 vs 多外掛部署（vLLM／NIM／TensorRT-LLM，同時掛 A／B／C 外掛）
+- 🔴 階段 5.2：API 評測（NIM／vLLM 架 API → NeMo Evaluator＋lighteval endpoint），與離線評估分數對照
 - 🟡 階段 6：tool calling、RAG 評估（Recall@k、引用正確率）、NeMo Guardrails 對照（Azure 晚到就提前）
 - 🔴 階段 7（等 Purdue 2 張 GPU）：FSDP／DeepSpeed 分散式 LoRA、vLLM 張量平行、Docker＋單機 k8s、迷你 GPT 預訓練
 - 🟡 平行基本功：nanoGPT、GPU 記憶體頻寬觀念、LeetCode 每週 2–3 題
