@@ -7,13 +7,27 @@
 #   - 先跑完筆記本 06（合併模型要已經在 HF 上）
 #   - 這本要用「新的」Kaggle 筆記本，不要接在 06 後面跑（套件版本不同）
 #   - Settings → Accelerator 選 GPU T4；Internet 打開；Secrets 加 HF_TOKEN 並打勾
-#   - 第 1 段 pip 那行要「去掉開頭的 #」才會安裝
+#   - 匯入 .ipynb 版時 pip 會自動安裝；用 .py 版時，第 1 段 pip 那行要「去掉開頭的 #」
 # 先用 MAX_SAMPLES = 20 試跑（約 5～10 分鐘），確認沒問題再改 None 考全部 1,319 題
+#   - 正式版（1,319 題）在 T4 上每個模型約 25～35 分鐘，兩個加起來約 1 小時
+# 2026-11-05 試跑紀錄：原模型 75%、微調後 70%（20 題）；截斷 20%／30% → 第 8 段新增「兩邊都沒被截斷的題目」答對率
 # ============================================================
 
 # ===== 第 1 段｜安裝 lighteval（官方 PyPI 最新版 0.13.0） =====
-# !pip install -q "lighteval==0.13.0"
+# !pip install -q "lighteval==0.13.0" "diskcache==5.6.3" "xxhash==3.5.0"
 # 注意：lighteval 0.13 的任務名稱格式改成「gsm8k|0」（課程範例的 "lighteval|gsm8k|0|0" 在新版會報錯）
+# 為什麼要多裝兩個套件（2026-11-05 Kaggle 試跑踩到的坑）：
+#   - diskcache：Kaggle 預裝 litellm，lighteval 偵測到後會開「硬碟快取」，沒有 diskcache 就報錯
+#   - xxhash 3.5.0：Kaggle 的 4.x 版不接受直接傳入文字，lighteval 寫紀錄（算題目指紋）時會報錯
+
+# 安裝後檢查：另開一個 Python 確認（lighteval 也是另開程式執行，所以用同樣方式檢查）
+import subprocess, sys
+_chk = ("import xxhash, diskcache, importlib.metadata as m;"
+        "xxhash.xxh64('測試');"
+        "print('xxhash', m.version('xxhash'), '｜diskcache', m.version('diskcache'))")
+_r = subprocess.run([sys.executable, "-c", _chk], capture_output=True, text=True)
+assert _r.returncode == 0, f"套件檢查失敗，請重跑 pip 那行：\n{_r.stderr[-500:]}"
+print("✅ 套件檢查通過：", _r.stdout.strip())
 
 # ===== 第 2 段｜主要設定（只需要改這裡） =====
 import os
@@ -124,6 +138,7 @@ else:
 # 如果微調讓模型變得比較簡短，兩邊被切的比例就不同 → 分數差距會混進「囉嗦程度」，不只是數學能力
 import pandas as pd
 cut_rate = {}
+per_q = {}       # 每題明細：id、是否截斷、是否答對
 for tag in ["base", "finetuned"]:
     f = sorted(glob.glob(f"{OUT_DIR}/{tag}/details/**/*.parquet", recursive=True))
     if not f:
@@ -134,6 +149,12 @@ for tag in ["base", "finetuned"]:
         cut = sum(EOS_ID not in list(r["output_tokens"][0]) for r in d["model_response"])
         cut_rate[tag] = cut / len(d) * 100
         print(f"{tag}：被 256 token 截斷 {cut}/{len(d)} 題（{cut_rate[tag]:.0f}%）")
+        # 記下每一題「有沒有被截斷」「有沒有答對」，給下一段算公平答對率
+        per_q[tag] = pd.DataFrame({
+            "id": [str(x["id"]) for x in d["doc"]],
+            "cut": [EOS_ID not in list(r["output_tokens"][0]) for r in d["model_response"]],
+            "ok": [float(m["extractive_match"]) for m in d["metric"]],
+        })
     except Exception as e:
         print(f"{tag}：細節檔格式跟預期不同（{e}），欄位：{list(d.columns)}")
     if tag == "finetuned":
@@ -143,14 +164,49 @@ for tag in ["base", "finetuned"]:
 if len(cut_rate) == 2 and abs(cut_rate["base"] - cut_rate["finetuned"]) > 5:
     print("⚠️ 兩邊截斷比例差超過 5 個百分點：報告分數時要一併說明")
 
+# ===== 第 8.5 段｜公平答對率：只看「兩個模型都沒被截斷」的題目 =====
+# 白話：考試限 256 字，寫太長會被收卷。只比「兩人都寫完」的題目，才看得出數學能力有沒有變差
+# 判讀：這裡差距小、但整體差距大 → 分數下降主要是「變囉嗦」，不是「變笨」
+fair = None
+if len(per_q) == 2:
+    # 對帳檢查：失敗只警告、不中斷（不然 1 小時的考試結果會存不到 HF）
+    consistency_ok = True
+    for t in per_q:
+        if not per_q[t]["id"].is_unique:
+            print(f"⚠️ {t} 的題目 id 有重複"); consistency_ok = False
+    j = per_q["base"].merge(per_q["finetuned"], on="id", suffixes=("_b", "_f"))
+    if not (len(j) == len(per_q["base"]) == len(per_q["finetuned"])):
+        print("⚠️ 兩邊題目對不起來，公平答對率僅供參考"); consistency_ok = False
+    both = j[~j["cut_b"] & ~j["cut_f"]]
+    # 用 lighteval 自己的逐題分數重算整體答對率，確認和第 5、6 段一致（避免讀錯欄位）
+    if abs(j["ok_b"].mean() * 100 - base["acc"]) > 0.1 or abs(j["ok_f"].mean() * 100 - ft["acc"]) > 0.1:
+        print("⚠️ 逐題分數加總和整體分數不一致，公平答對率僅供參考"); consistency_ok = False
+    cut_wrong = {t: float((1 - j.loc[j[f"cut_{s}"], f"ok_{s}"]).sum()) for t, s in [("base", "b"), ("finetuned", "f")]}
+    fair = {
+        "n_both_uncut": int(len(both)),
+        "base_acc": round(both["ok_b"].mean() * 100, 2) if len(both) else None,
+        "finetuned_acc": round(both["ok_f"].mean() * 100, 2) if len(both) else None,
+        "n_wrong_and_cut": cut_wrong,      # 答錯的題目中，有幾「題」是被截斷的（題數，不是比例）
+        "consistency_ok": consistency_ok,  # 對帳檢查有沒有通過
+    }
+    print(f"兩邊都沒被截斷的題目：{len(both)}/{len(j)} 題")
+    if len(both):
+        print(f"  原模型 {fair['base_acc']:.1f}%｜微調後 {fair['finetuned_acc']:.1f}%｜差距 {fair['finetuned_acc'] - fair['base_acc']:+.1f} 個百分點")
+    print(f"答錯的題目中屬於「被截斷」的：原模型 {cut_wrong['base']:.0f} 題｜微調後 {cut_wrong['finetuned']:.0f} 題")
+else:
+    print("細節檔不齊全，略過公平答對率")
+
 # ===== 第 9 段｜存成績、推到 HF 私人 repo =====
+from importlib.metadata import version as md_version
 summary = {
     "run_name": RUN_NAME, "task": TASK, "max_samples": MAX_SAMPLES, "batch_size": BATCH_SIZE, "dtype": DTYPE,
     "base": {"model": BASE_MODEL, "revision": BASE_SHA, **{k: v for k, v in base.items() if k != "file"}},
     "truncated_pct_at_256": {k: round(v, 1) for k, v in cut_rate.items()},
+    "fair_both_uncut": fair,
     "finetuned": {"model": FT_MODEL, "revision": FT_SHA, **{k: v for k, v in ft.items() if k != "file"}},
     "diff_points": round(diff, 2),
-    "versions": {"lighteval": lighteval.__version__, "transformers": transformers.__version__, "torch": torch.__version__},
+    "versions": {"lighteval": lighteval.__version__, "transformers": transformers.__version__, "torch": torch.__version__,
+                 "xxhash": md_version("xxhash"), "diskcache": md_version("diskcache")},
     "gpu": torch.cuda.get_device_name(0),
     "command": f'lighteval accelerate "model_name=<model>,revision=<sha>,dtype={DTYPE},batch_size={BATCH_SIZE}" "{TASK}" --output-dir <dir> --save-details'
                + (f" --max-samples {MAX_SAMPLES}" if MAX_SAMPLES else ""),
