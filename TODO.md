@@ -43,6 +43,7 @@
 - 🔴 階段 5（等 H100／L4）：HF／vLLM／TRT-LLM／NIM × FP16／FP8／INT4 × batch／KV cache × 功率上限，量每千 token 耗電
 - 🔴 階段 5.1：合併 vs 多外掛部署（vLLM／NIM／TensorRT-LLM，同時掛 A／B／C 外掛）
 - 🔴 階段 5.2：API 評測（NIM／vLLM 架 API → NeMo Evaluator＋lighteval endpoint），與離線評估分數對照
+- 🔴 階段 5.2 延伸：用 **NeMo Evaluator 的 LLM-as-judge** 評秘書輸出的 `explanation`（目前評分器只看 JSON 欄位、沒評說明）：說明是否正確、白話、與限制條件一致；先用 20 題真人考卷人工打分校準評審模型，再擴大；開源對照可用 lighteval／自寫 judge prompt
 - 🟡 階段 6：tool calling、RAG 評估（Recall@k、引用正確率）、NeMo Guardrails 對照（Azure 晚到就提前）
 - 🔴 階段 7（等 Purdue 2 張 GPU）：FSDP／DeepSpeed 分散式 LoRA、vLLM 張量平行、Docker＋單機 k8s、迷你 GPT 預訓練
 - 🟡 平行基本功：nanoGPT、GPU 記憶體頻寬觀念、LeetCode 每週 2–3 題
