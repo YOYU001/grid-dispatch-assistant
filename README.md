@@ -20,6 +20,14 @@ Exact match on the full constraint JSON (Kaggle T4, greedy decoding). 95% Wilson
 | human-written notes | 20 | 30.0% | **75.0%** [53.1–88.8] |
 | GSM8K (lighteval, regression check) | — | 0.670 | 0.710 |
 
+![Exact match: base vs SFT vs SFT+DPO](docs/figures/accuracy_base_sft_dpo.png)
+
+*Chart numbers come from the shared re-evaluation in the DPO repo (vLLM); SFT test is 98.4% there vs 98.6% in notebook 05 (fp16 batching is not bit-exact).*
+
+![Exact match by category](docs/figures/sft_by_category.png)
+
+![SFT training loss](docs/figures/sft_loss.png)
+
 - Refusal recall 75.2% → **96.6%**; false refusals 9.4% → **0.1%**. JSON validity 100% before and after.
 - The gap between `test` and `unseen` / human notes shows the model partly learned the data generator itself. 74 of the 86 remaining errors come from unseen phrasings ("X can't be touched" answered only halfway, relative-time arithmetic). Full error analysis: [docs/eval_05_full_analysis.md](docs/eval_05_full_analysis.md).
 - Follow-up preference alignment (DPO) on this SFT adapter: [YOYU001/grid-dispatch-dpo](https://github.com/YOYU001/grid-dispatch-dpo).
