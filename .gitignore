@@ -1,3 +1,6 @@
 data/out/
 __pycache__/
 graphify-out/
+
+# private eval data (20 human-written questions) - never commit
+*human*.jsonl
